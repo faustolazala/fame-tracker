@@ -75,8 +75,19 @@ function isSupportedCharacterSheet(application, root) {
 }
 
 function findHeaderTarget(root) {
-  return root.querySelector(".sheet-header .right")
-    ?? root.querySelector(".sheet-header .summary")
+  const modernDetails = root.querySelector(".sheet-header > .right > div:last-child");
+  if (modernDetails) {
+    let slot = modernDetails.querySelector(":scope > .sheet-header-buttons");
+    if (!slot) {
+      slot = document.createElement("div");
+      slot.className = "sheet-header-buttons";
+      modernDetails.prepend(slot);
+    }
+    slot.classList.add("fame-tracker-slot");
+    return slot;
+  }
+
+  return root.querySelector(".sheet-header .summary")
     ?? root.querySelector(".sheet-header .header-details")
     ?? root.querySelector(".sheet-header");
 }

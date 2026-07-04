@@ -157,3 +157,31 @@
 .fame-tracker-card [hidden] {
   display: none !important;
 }
+.dnd5e2.sheet.actor.character .sheet-header .sheet-header-buttons.fame-tracker-slot {
+  left: -1.5rem;
+}
+
+.dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-control {
+  gap: 1px;
+  min-height: 24px;
+  padding: 1px;
+}
+
+.dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-adjust {
+  font-size: 0.6rem;
+  height: 20px;
+  width: 18px;
+}
+
+.dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-score {
+  min-width: 34px;
+  padding-inline: 2px;
+}
+
+.dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-label {
+  font-size: 0.5rem;
+}
+
+.dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-value {
+  font-size: 0.9rem;
+}
