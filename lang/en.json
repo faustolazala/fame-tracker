@@ -1,0 +1,22 @@
+{
+  "FAME_TRACKER": {
+    "ControlLabel": "Fame tracker",
+    "Decrease": "Decrease Fame by 1",
+    "Failure": "Failure",
+    "Fame": "Fame",
+    "HiddenResult": "The Fame test result is hidden.",
+    "Increase": "Increase Fame by 1",
+    "Performance": "Performance",
+    "PerformanceRoll": "Performance Check",
+    "PercentileRoll": "Fame Roll",
+    "ReadOnlyLabel": "Fame: {fame}",
+    "ResultSummary": "Rolled {result} against a target of {target}.",
+    "RollError": "The Fame test could not be completed.",
+    "RollHint": "Make a Fame test",
+    "RollLabel": "Fame: {fame}. Make a Fame test",
+    "Success": "Success",
+    "Target": "Target",
+    "TestTitle": "Fame Test",
+    "UpdateError": "Fame could not be updated."
+  }
+}

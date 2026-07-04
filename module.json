@@ -1,0 +1,42 @@
+{
+  "id": "fame-tracker",
+  "title": "Fame Tracker",
+  "description": "Track character fame and make percentile Fame tests from D&D 5e character sheets.",
+  "authors": [
+    {
+      "name": "faustolazala",
+      "email": "kaozlord123@gmail.com",
+      "url": "https://paypal.me/kaozlord123"
+    }
+  ],
+  "version": "0.1.0",
+  "url": "https://github.com/faustolazala/fame-tracker",
+  "manifest": "",
+  "download": "",
+  "readme": "",
+  "esmodules": [
+    "scripts/fame-tracker.mjs"
+  ],
+  "styles": [
+    "styles/fame-tracker.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "compatibility": {
+    "minimum": "12",
+    "verified": "14"
+  },
+  "relationships": {
+    "systems": [
+      {
+        "id": "dnd5e",
+        "type": "system"
+      }
+    ]
+  }
+}

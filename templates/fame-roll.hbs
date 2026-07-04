@@ -1,0 +1,43 @@
+<section class="fame-tracker-card {{#if success}}is-success{{else}}is-failure{{/if}}">
+  <header class="fame-tracker-card-header">
+    <i class="fas fa-star" aria-hidden="true"></i>
+    <h3>{{localize "FAME_TRACKER.TestTitle"}}</h3>
+  </header>
+
+  <div data-fame-tracker-results hidden>
+    <dl class="fame-tracker-calculation">
+      <div>
+        <dt>{{localize "FAME_TRACKER.Fame"}}</dt>
+        <dd>{{fame}}</dd>
+      </div>
+      <div>
+        <dt>{{localize "FAME_TRACKER.Performance"}}</dt>
+        <dd>{{performanceTotal}}</dd>
+      </div>
+      <div>
+        <dt>{{localize "FAME_TRACKER.Target"}}</dt>
+        <dd>{{target}}%</dd>
+      </div>
+    </dl>
+
+    <div class="fame-tracker-roll">
+      <h4>{{localize "FAME_TRACKER.PerformanceRoll"}}</h4>
+      {{{performanceRollHtml}}}
+    </div>
+
+    <div class="fame-tracker-roll">
+      <h4>{{localize "FAME_TRACKER.PercentileRoll"}}</h4>
+      {{{percentileRollHtml}}}
+    </div>
+
+    <p class="fame-tracker-outcome">
+      <strong>{{resultLabel}}</strong>
+      <span>{{localize "FAME_TRACKER.ResultSummary" result=percentileTotal target=target}}</span>
+    </p>
+  </div>
+
+  <p class="fame-tracker-hidden" data-fame-tracker-hidden>
+    <i class="fas fa-eye-slash" aria-hidden="true"></i>
+    {{localize "FAME_TRACKER.HiddenResult"}}
+  </p>
+</section>
