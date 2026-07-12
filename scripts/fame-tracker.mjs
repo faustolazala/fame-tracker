@@ -36,8 +36,7 @@ function injectFameControl(application, html) {
   const target = findHeaderTarget(root);
   if (!target) return;
 
-  const sheetRoot = getCharacterSheetRoot(root) ?? root;
-  if (sheetRoot.querySelector("[data-fame-tracker-control]")) return;
+  if (root.querySelector("[data-fame-tracker-control]")) return;
 
   const fame = normalizeFame(actor.getFlag(MODULE_ID, FAME_FLAG));
   const editable = Boolean(actor.isOwner);
@@ -46,13 +45,18 @@ function injectFameControl(application, html) {
 }
 
 function getApplicationActor(application) {
-  const candidate = application?.actor
-    ?? application?.document
+  const document = application?.document
     ?? application?.object
     ?? application?.options?.document;
-  return candidate?.documentName === "Actor" ? candidate : null;
-}
 
+  // Item and feature applications can expose their owning Actor. Only accept
+  // an application whose own document is the character Actor.
+  if (document?.documentName) {
+    return document.documentName === "Actor" ? document : null;
+  }
+
+  return application?.actor?.documentName === "Actor" ? application.actor : null;
+}
 function getHtmlRoot(html) {
   if (html instanceof HTMLElement) return html;
   if (html?.[0] instanceof HTMLElement) return html[0];
@@ -67,11 +71,10 @@ function isSupportedCharacterSheet(application, root) {
   ].join(" ").toLowerCase();
 
   if (identity.includes("tidy5e") || identity.includes("obsidian")) return false;
-  if (!getCharacterSheetRoot(root)) return false;
+  if (!getCharacterSheetHeader(root)) return false;
 
-  return /actorsheet5echaracter|characteractorsheet|dnd5e/.test(identity)
-    || Boolean(root.matches(".dnd5e.sheet.actor.character, .dnd5e2.sheet.actor.character"))
-    || Boolean(root.querySelector(":scope .dnd5e.sheet.actor.character, :scope .dnd5e2.sheet.actor.character"));
+  return /actorsheet5echaracter|characteractorsheet|charactersheet/.test(identity)
+    || Boolean(root.matches(".dnd5e.sheet.actor.character, .dnd5e2.sheet.actor.character"));
 }
 
 function findHeaderTarget(root) {
@@ -95,21 +98,21 @@ function findHeaderTarget(root) {
     ?? header;
 }
 
-function getCharacterSheetRoot(root) {
-  const selector = ".dnd5e.sheet.actor.character, .dnd5e2.sheet.actor.character";
-  if (root.matches?.(selector)) return root;
-  return root.closest?.(selector)
-    ?? root.querySelector?.(`:scope ${selector}`)
-    ?? null;
-}
-
 function getCharacterSheetHeader(root) {
-  const sheetRoot = getCharacterSheetRoot(root) ?? root;
-  if (!sheetRoot.matches?.(".dnd5e.sheet.actor.character, .dnd5e2.sheet.actor.character")) return null;
+  const scopes = [
+    root,
+    root.querySelector?.(":scope > .window-content"),
+    root.querySelector?.(":scope > form")
+  ].filter(Boolean);
 
-  return sheetRoot.querySelector(":scope > .sheet-header")
-    ?? sheetRoot.querySelector(":scope > form > .sheet-header")
-    ?? sheetRoot.querySelector(":scope > form > header.sheet-header");
+  for (const scope of scopes) {
+    if (scope.matches?.(".sheet-header")) return scope;
+
+    const header = scope.querySelector?.(":scope > .sheet-header, :scope > header.sheet-header, :scope > form > .sheet-header, :scope > form > header.sheet-header");
+    if (header) return header;
+  }
+
+  return null;
 }
 
 function buildFameControl(actor, fame, editable, busy) {
