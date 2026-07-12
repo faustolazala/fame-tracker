@@ -32,10 +32,12 @@ function injectFameControl(application, html) {
 
   const root = getHtmlRoot(html);
   if (!root || !isSupportedCharacterSheet(application, root)) return;
-  if (root.querySelector("[data-fame-tracker-control]")) return;
 
   const target = findHeaderTarget(root);
   if (!target) return;
+
+  const sheetRoot = getCharacterSheetRoot(root) ?? root;
+  if (sheetRoot.querySelector("[data-fame-tracker-control]")) return;
 
   const fame = normalizeFame(actor.getFlag(MODULE_ID, FAME_FLAG));
   const editable = Boolean(actor.isOwner);
@@ -65,17 +67,18 @@ function isSupportedCharacterSheet(application, root) {
   ].join(" ").toLowerCase();
 
   if (identity.includes("tidy5e") || identity.includes("obsidian")) return false;
+  if (!getCharacterSheetRoot(root)) return false;
 
-  return Boolean(root.querySelector(".sheet-header"))
-    && (
-      /actorsheet5echaracter|characteractorsheet|dnd5e/.test(identity)
-      || root.matches(".dnd5e.sheet.actor, .dnd5e2.sheet.actor")
-      || root.querySelector(".dnd5e.sheet.actor, .dnd5e2.sheet.actor")
-    );
+  return /actorsheet5echaracter|characteractorsheet|dnd5e/.test(identity)
+    || Boolean(root.matches(".dnd5e.sheet.actor.character, .dnd5e2.sheet.actor.character"))
+    || Boolean(root.querySelector(":scope .dnd5e.sheet.actor.character, :scope .dnd5e2.sheet.actor.character"));
 }
 
 function findHeaderTarget(root) {
-  const modernDetails = root.querySelector(".sheet-header > .right > div:last-child");
+  const header = getCharacterSheetHeader(root);
+  if (!header) return null;
+
+  const modernDetails = header.querySelector(":scope > .right > div:last-child");
   if (modernDetails) {
     let slot = modernDetails.querySelector(":scope > .sheet-header-buttons");
     if (!slot) {
@@ -87,9 +90,26 @@ function findHeaderTarget(root) {
     return slot;
   }
 
-  return root.querySelector(".sheet-header .summary")
-    ?? root.querySelector(".sheet-header .header-details")
-    ?? root.querySelector(".sheet-header");
+  return header.querySelector(":scope .summary")
+    ?? header.querySelector(":scope .header-details")
+    ?? header;
+}
+
+function getCharacterSheetRoot(root) {
+  const selector = ".dnd5e.sheet.actor.character, .dnd5e2.sheet.actor.character";
+  if (root.matches?.(selector)) return root;
+  return root.closest?.(selector)
+    ?? root.querySelector?.(`:scope ${selector}`)
+    ?? null;
+}
+
+function getCharacterSheetHeader(root) {
+  const sheetRoot = getCharacterSheetRoot(root) ?? root;
+  if (!sheetRoot.matches?.(".dnd5e.sheet.actor.character, .dnd5e2.sheet.actor.character")) return null;
+
+  return sheetRoot.querySelector(":scope > .sheet-header")
+    ?? sheetRoot.querySelector(":scope > form > .sheet-header")
+    ?? sheetRoot.querySelector(":scope > form > header.sheet-header");
 }
 
 function buildFameControl(actor, fame, editable, busy) {
