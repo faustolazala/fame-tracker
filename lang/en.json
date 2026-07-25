@@ -10,7 +10,7 @@
     "PerformanceRoll": "Performance Check",
     "PercentileRoll": "Fame Roll",
     "RankAdmired": "Admired",
-    "RankBonus": "{rank} (+{bonus} Performance)",
+    "RankBonus": "{rank} +{bonus}",
     "RankHonored": "Honored",
     "RankKnown": "Known",
     "RankLegend": "Legend",
