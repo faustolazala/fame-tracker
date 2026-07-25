@@ -198,3 +198,8 @@
 .dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-rank {
   font-size: 0.6rem;
 }
+.fame-tracker-arena-interest label {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+}

@@ -11,6 +11,9 @@ const MODULE_ID = "fame-tracker";
 const FAME_FLAG = "fame";
 const TEST_FLAG = "test";
 const SCHEMA_VERSION = 1;
+const ARENA_SKILL_IDS = new Set(["prf", "dec", "itm", "per"]);
+const ARENA_INTEREST_FIELD = `${MODULE_ID}.arena-interest`;
+const LEGACY_ARENA_DIALOG_PATCH = "fameTrackerArenaDialogPatch";
 
 const pendingUpdates = new WeakMap();
 const activeRolls = new WeakSet();
@@ -22,6 +25,10 @@ Hooks.once("init", () => {
 Hooks.on("renderActorSheet", injectFameControl);
 Hooks.on("renderActorSheetV2", injectFameControl);
 Hooks.on("renderApplicationV2", injectFameControl);
+Hooks.on("renderApplicationV2", injectArenaInterestControl);
+Hooks.on("dnd5e.buildSkillRollConfig", applyModernArenaInterestBonus);
+Hooks.on("dnd5e.preRollSkill", configureLegacyArenaInterestDialog);
+Hooks.once("ready", patchLegacyArenaInterestDialog);
 Hooks.on("renderChatMessage", revealVisibleChatResult);
 Hooks.on("renderChatMessageHTML", revealVisibleChatResult);
 
@@ -64,6 +71,115 @@ function getHtmlRoot(html) {
   return null;
 }
 
+function injectArenaInterestControl(application, html) {
+  const data = getArenaSkillDialogData(application);
+  if (!data) return;
+
+  const root = getHtmlRoot(html);
+  if (!root || root.querySelector(`[name="${ARENA_INTEREST_FIELD}"]`)) return;
+
+  const fieldset = root.querySelector("fieldset");
+  if (!fieldset) return;
+  fieldset.append(buildArenaInterestControl(root.ownerDocument, data.rank));
+}
+
+function applyModernArenaInterestBonus(application, config, formData) {
+  const data = getArenaSkillDialogData(application);
+  if (!data || !formData?.has(ARENA_INTEREST_FIELD)) return;
+  if (!data.rank.bonus) return;
+
+  config.parts.push("@fameArenaBonus");
+  config.data.fameArenaBonus = data.rank.bonus;
+}
+
+function configureLegacyArenaInterestDialog(actor, rollData, skillId) {
+  if (getDndMajorVersion() >= 4 || !isArenaSkill(actor, skillId)) return;
+
+  const rank = getFameRank(normalizeFame(actor.getFlag(MODULE_ID, FAME_FLAG)));
+  const existingRender = rollData.dialogOptions?.render;
+  rollData.dialogOptions = {
+    ...rollData.dialogOptions,
+    render: html => {
+      existingRender?.(html);
+      const root = getHtmlRoot(html);
+      const form = root?.querySelector("form");
+      if (!form || form.querySelector(`[name="${ARENA_INTEREST_FIELD}"]`)) return;
+      form.append(buildArenaInterestControl(form.ownerDocument, rank));
+    }
+  };
+}
+
+function patchLegacyArenaInterestDialog() {
+  if (getDndMajorVersion() >= 4) return;
+
+  const prototype = CONFIG.Dice?.D20Roll?.prototype;
+  if (!prototype || prototype[LEGACY_ARENA_DIALOG_PATCH]) return;
+
+  const originalSubmit = prototype._onDialogSubmit;
+  if (typeof originalSubmit !== "function") return;
+
+  prototype._onDialogSubmit = function (html, advantageMode) {
+    const form = getHtmlRoot(html)?.querySelector("form");
+    const checkbox = form?.querySelector(`[name="${ARENA_INTEREST_FIELD}"]`);
+    const rankBonus = Number(form?.querySelector('[name="fame-tracker-arena-bonus"]')?.value ?? 0);
+    const situationalBonus = form?.querySelector('[name="bonus"]');
+
+    if (checkbox?.checked && rankBonus > 0 && situationalBonus) {
+      const existing = situationalBonus.value.trim();
+      situationalBonus.value = existing ? `(${existing}) + ${rankBonus}` : String(rankBonus);
+    }
+
+    return originalSubmit.call(this, html, advantageMode);
+  };
+  prototype[LEGACY_ARENA_DIALOG_PATCH] = true;
+}
+
+function getArenaSkillDialogData(application) {
+  const actor = application?.config?.subject;
+  const skillId = application?.config?.skill;
+  const identity = application?.constructor?.name ?? "";
+
+  if (!/skilltoolrollconfigurationdialog/i.test(identity)) return null;
+  if (!isArenaSkill(actor, skillId)) return null;
+  return { actor, skillId, rank: getFameRank(normalizeFame(actor.getFlag(MODULE_ID, FAME_FLAG))) };
+}
+
+function isArenaSkill(actor, skillId) {
+  return actor?.documentName === "Actor"
+    && actor.type === "character"
+    && ARENA_SKILL_IDS.has(skillId);
+}
+
+function getDndMajorVersion() {
+  return Number.parseInt(String(game.system.version ?? "0").split(".")[0], 10) || 0;
+}
+
+function buildArenaInterestControl(documentRef, rank) {
+  const group = documentRef.createElement("div");
+  group.className = "form-group fame-tracker-arena-interest";
+
+  const label = documentRef.createElement("label");
+  label.className = "checkbox";
+
+  const input = documentRef.createElement("input");
+  input.type = "checkbox";
+  input.name = ARENA_INTEREST_FIELD;
+  input.value = "true";
+
+  const hiddenBonus = documentRef.createElement("input");
+  hiddenBonus.type = "hidden";
+  hiddenBonus.name = "fame-tracker-arena-bonus";
+  hiddenBonus.value = String(rank.bonus);
+
+  const rankKey = `FAME_TRACKER.Rank${rank.id[0].toUpperCase()}${rank.id.slice(1)}`;
+  const text = documentRef.createTextNode(game.i18n.format("FAME_TRACKER.ArenaInterest", {
+    rank: game.i18n.localize(rankKey), bonus: rank.bonus
+  }));
+
+  label.append(input, text);
+  group.append(label, hiddenBonus);
+  return group;
+}
 function isSupportedCharacterSheet(application, root) {
   const identity = [
     application?.constructor?.name,

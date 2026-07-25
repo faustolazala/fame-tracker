@@ -1,5 +1,6 @@
 {
   "FAME_TRACKER": {
+    "ArenaInterest": "Target is interested in the arena ({rank}: +{bonus} Fame bonus)",
     "ControlLabel": "Fame tracker",
     "Decrease": "Decrease Fame by 1",
     "Failure": "Failure",
