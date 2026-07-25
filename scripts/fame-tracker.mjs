@@ -224,12 +224,15 @@ async function performFameTest(actor) {
 
 async function rollPerformanceWithoutMessage(actor) {
   const majorVersion = Number.parseInt(String(game.system.version ?? "0").split(".")[0], 10);
+  // Force the system's normal roll-configuration dialog. This is where the
+  // player selects advantage, normal, or disadvantage for Performance only.
+  const dialogOptions = { configure: true, fastForward: false };
   let result;
 
   if (majorVersion >= 4) {
-    result = await actor.rollSkill({ skill: "prf" }, {}, { create: false });
+    result = await actor.rollSkill({ skill: "prf" }, dialogOptions, { create: false });
   } else {
-    result = await actor.rollSkill("prf", { chatMessage: false });
+    result = await actor.rollSkill("prf", { ...dialogOptions, chatMessage: false });
   }
 
   if (!result) return [];
