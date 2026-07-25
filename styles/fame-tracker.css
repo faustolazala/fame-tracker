@@ -185,3 +185,15 @@
 .dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-value {
   font-size: 0.9rem;
 }
+
+.fame-tracker-rank {
+  font-family: var(--dnd5e-font-roboto-condensed, "Roboto Condensed", sans-serif);
+  font-size: 0.52rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dnd5e2.sheet.actor.character .sheet-header-buttons .fame-tracker-rank {
+  font-size: 0.42rem;
+}

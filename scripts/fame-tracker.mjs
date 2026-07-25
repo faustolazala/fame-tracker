@@ -2,6 +2,7 @@ import {
   MAX_FAME,
   MIN_FAME,
   calculateFameTarget,
+  getFameRank,
   isFameSuccess,
   normalizeFame
 } from "./fame-utils.mjs";
@@ -116,6 +117,10 @@ function getCharacterSheetHeader(root) {
 }
 
 function buildFameControl(actor, fame, editable, busy) {
+  const rank = getFameRank(fame);
+  const rankKey = `FAME_TRACKER.Rank${rank.id[0].toUpperCase()}${rank.id.slice(1)}`;
+  const rankLabel = game.i18n.localize(rankKey);
+  const rankSummary = game.i18n.format("FAME_TRACKER.RankBonus", { rank: rankLabel, bonus: rank.bonus });
   const container = document.createElement("div");
   container.className = "fame-tracker-control";
   container.dataset.fameTrackerControl = "";
@@ -130,16 +135,21 @@ function buildFameControl(actor, fame, editable, busy) {
   score.className = "fame-tracker-score";
   score.dataset.fameTrackerScore = "";
   score.innerHTML = `<span class="fame-tracker-label">${escapeHtml(game.i18n.localize("FAME_TRACKER.Fame"))}</span>`
-    + `<span class="fame-tracker-value">${fame}</span>`;
+    + `<span class="fame-tracker-value">${fame}</span>`
+    + `<span class="fame-tracker-rank">${escapeHtml(rankSummary)}</span>`;
 
   if (editable) {
     score.type = "button";
     score.disabled = busy;
-    score.setAttribute("aria-label", game.i18n.format("FAME_TRACKER.RollLabel", { fame }));
+    score.setAttribute("aria-label", game.i18n.format("FAME_TRACKER.RollLabel", {
+      fame, rank: rankLabel, bonus: rank.bonus
+    }));
     score.dataset.tooltip = game.i18n.localize("FAME_TRACKER.RollHint");
     score.addEventListener("click", () => performFameTest(actor));
   } else {
-    score.setAttribute("aria-label", game.i18n.format("FAME_TRACKER.ReadOnlyLabel", { fame }));
+    score.setAttribute("aria-label", game.i18n.format("FAME_TRACKER.ReadOnlyLabel", {
+      fame, rank: rankLabel, bonus: rank.bonus
+    }));
   }
   container.append(score);
 
@@ -149,7 +159,6 @@ function buildFameControl(actor, fame, editable, busy) {
 
   return container;
 }
-
 function createAdjustButton(actor, delta, labelKey, icon, disabled) {
   const button = document.createElement("button");
   button.type = "button";
@@ -195,11 +204,12 @@ async function performFameTest(actor) {
   setActorControlsBusy(actor, true);
 
   try {
-    const performanceRolls = await rollPerformanceWithoutMessage(actor);
+    const fame = normalizeFame(actor.getFlag(MODULE_ID, FAME_FLAG));
+    const rank = getFameRank(fame);
+    const performanceRolls = await rollPerformanceWithoutMessage(actor, rank.bonus);
     if (!performanceRolls.length) return;
 
     const performanceRoll = performanceRolls[0];
-    const fame = normalizeFame(actor.getFlag(MODULE_ID, FAME_FLAG));
     const target = calculateFameTarget(performanceRoll.total, fame);
     const percentileRoll = await new Roll("1d100").evaluate();
     const success = isFameSuccess(percentileRoll.total, target);
@@ -221,18 +231,23 @@ async function performFameTest(actor) {
     setActorControlsBusy(actor, false);
   }
 }
-
-async function rollPerformanceWithoutMessage(actor) {
+async function rollPerformanceWithoutMessage(actor, rankBonus = 0) {
   const majorVersion = Number.parseInt(String(game.system.version ?? "0").split(".")[0], 10);
   // Force the system's normal roll-configuration dialog. This is where the
   // player selects advantage, normal, or disadvantage for Performance only.
   const dialogOptions = { configure: true, fastForward: false };
+  const bonus = Math.max(0, Number(rankBonus) || 0);
   let result;
 
   if (majorVersion >= 4) {
-    result = await actor.rollSkill({ skill: "prf" }, dialogOptions, { create: false });
+    const config = { skill: "prf", ...(bonus ? { bonus: `+${bonus}` } : {}) };
+    result = await actor.rollSkill(config, dialogOptions, { create: false });
   } else {
-    result = await actor.rollSkill("prf", { ...dialogOptions, chatMessage: false });
+    const rankBonusOptions = bonus ? {
+      parts: ["@fameRankBonus"],
+      data: { fameRankBonus: bonus }
+    } : {};
+    result = await actor.rollSkill("prf", { ...dialogOptions, ...rankBonusOptions, chatMessage: false });
   }
 
   if (!result) return [];
@@ -243,7 +258,6 @@ async function rollPerformanceWithoutMessage(actor) {
   }
   throw new Error("The D&D 5e Performance check did not return a usable roll.");
 }
-
 async function createFameChatMessage({
   actor,
   fame,
