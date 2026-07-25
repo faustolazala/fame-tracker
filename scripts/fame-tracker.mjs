@@ -85,11 +85,20 @@ function injectArenaInterestControl(application, html) {
 
 function applyModernArenaInterestBonus(application, config, formData) {
   const data = getArenaSkillDialogData(application);
-  if (!data || !formData?.get(ARENA_INTEREST_FIELD)) return;
+  if (!data) return;
+
+  config.parts = config.parts.filter(part => part !== "@fameArenaBonus");
+  delete config.data.fameArenaBonus;
+  if (!isArenaInterestSelected(formData)) return;
   if (!data.rank.bonus) return;
 
   config.parts.push("@fameArenaBonus");
   config.data.fameArenaBonus = data.rank.bonus;
+}
+
+function isArenaInterestSelected(formData) {
+  const value = formData?.get?.(ARENA_INTEREST_FIELD);
+  return value === true || value === "true" || value === "on" || value === 1 || value === "1";
 }
 
 function configureLegacyArenaInterestDialog(actor, rollData, skillId) {
