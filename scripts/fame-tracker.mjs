@@ -85,7 +85,7 @@ function injectArenaInterestControl(application, html) {
 
 function applyModernArenaInterestBonus(application, config, formData) {
   const data = getArenaSkillDialogData(application);
-  if (!data || !formData?.has(ARENA_INTEREST_FIELD)) return;
+  if (!data || !formData?.get(ARENA_INTEREST_FIELD)) return;
   if (!data.rank.bonus) return;
 
   config.parts.push("@fameArenaBonus");
