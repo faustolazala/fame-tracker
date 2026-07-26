@@ -330,8 +330,7 @@ async function performFameTest(actor) {
 
   try {
     const fame = normalizeFame(actor.getFlag(MODULE_ID, FAME_FLAG));
-    const rank = getFameRank(fame);
-    const performanceRolls = await rollPerformanceWithoutMessage(actor, rank.bonus);
+    const performanceRolls = await rollPerformanceWithoutMessage(actor);
     if (!performanceRolls.length) return;
 
     const performanceRoll = performanceRolls[0];
@@ -356,23 +355,17 @@ async function performFameTest(actor) {
     setActorControlsBusy(actor, false);
   }
 }
-async function rollPerformanceWithoutMessage(actor, rankBonus = 0) {
+async function rollPerformanceWithoutMessage(actor) {
   const majorVersion = Number.parseInt(String(game.system.version ?? "0").split(".")[0], 10);
   // Force the system's normal roll-configuration dialog. This is where the
   // player selects advantage, normal, or disadvantage for Performance only.
   const dialogOptions = { configure: true, fastForward: false };
-  const bonus = Math.max(0, Number(rankBonus) || 0);
   let result;
 
   if (majorVersion >= 4) {
-    const config = { skill: "prf", ...(bonus ? { bonus: `+${bonus}` } : {}) };
-    result = await actor.rollSkill(config, dialogOptions, { create: false });
+    result = await actor.rollSkill({ skill: "prf" }, dialogOptions, { create: false });
   } else {
-    const rankBonusOptions = bonus ? {
-      parts: ["@fameRankBonus"],
-      data: { fameRankBonus: bonus }
-    } : {};
-    result = await actor.rollSkill("prf", { ...dialogOptions, ...rankBonusOptions, chatMessage: false });
+    result = await actor.rollSkill("prf", { ...dialogOptions, chatMessage: false });
   }
 
   if (!result) return [];
